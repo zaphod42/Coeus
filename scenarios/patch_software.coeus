@@ -1,0 +1,61 @@
+type RDBMS {
+    DB
+    Replication
+}
+
+type RDBMSv2 {
+    DB
+    Replication
+}
+
+type WebServer {
+    HTTP
+}
+
+type LoadBalancer {
+}
+
+action setup() {
+    main := ![RDBMS:main]
+    backup := ![RDBMS:backup]
+    ![backup -> Replication main]
+
+    ![WebServer]
+    ![WebServer]
+    ![?[WebServer] -> DB main]
+
+    ![LoadBalancer]
+    ![?[LoadBalancer] -> HTTP ?[WebServer]]
+}
+
+action patch() {
+    atomic {
+        X[?[?[WebServer] -> DB ?]]
+        ![?[WebServer] -> DB ?[RDBMS:backup]]
+        ?[WebServer] {
+            stop[_]
+            start[_]
+        }
+    }
+
+    X[?[?[RDBMS:backup] -> Replication ?[RDBMS:main]]]
+
+    X[?[RDBMS:main]]
+    ![RDBMSv2:main]
+    ![?[RDBMSv2:main] -> Replication ?[RDBMS:backup]]
+
+    atomic {
+        X[?[?[WebServer] -> DB ?]]
+        ![?[WebServer] -> DB ?[RDBMSv2:main]]
+        ?[WebServer] {
+            stop[_]
+            start[_]
+        }
+    }
+
+    X[?[?[RDBMSv2:main] -> Replication ?[RDBMS:backup]]]
+    ![?[RDBMS:backup] -> Replication ?[RDBMS:main]]
+}
+
+setup()
+patch()

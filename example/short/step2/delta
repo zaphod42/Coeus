@@ -1,0 +1,17 @@
+ ==> Entering bind
+ <== Apache2:apache02.mpm := worker
+ ==> Entering bind
+ ==> Entering stop_instance
+ <== stop_instance((Server:server02))
+ ==> Entering bind
+ <== Server:server02.memory := 1024
+ ==> Entering start_instance
+ <== start_instance((Server:server02))
+ ==> Entering bind
+ <== Apache2:apache01.mpm := worker
+ERROR: Configuration does not conform to policy
+Counterexample: 
+	No failures needed
+failed in the policy production
+for subscription dynamic
+

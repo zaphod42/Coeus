@@ -1,0 +1,382 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Pod::Usage;
+use Data::Dumper;
+use Carp qw(confess);
+
+use Coeus::Interpreter;
+
+our $VERSION = '0.7.1';
+
+my $input     = '';
+my @hooks   = ();
+my @targets   = qw(ast run);
+my $target    = 'run';
+my $trace     = 0;
+my $help      = 0;
+my $man       = 0;
+my $backtrace = 0;
+
+GetOptions(
+    "input:s"   => \$input,
+    "hook=s"    => \@hooks,
+    "trace"     => \$trace,
+    "backtrace" => \$backtrace,
+    "help"      => \$help,
+    "man"       => \$man,
+    "target=s"  => \$target,
+) or pod2usage(2);
+
+pod2usage(2) unless grep { $_ eq $target } @targets;
+
+pod2usage(2) unless $input;
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+$::RD_TRACE = 1 if $trace;
+$SIG{__DIE__} = \&confess if $backtrace;
+
+foreach my $hook (@hooks) {
+    if($hook =~ qr{([^\s]*)\s*(.*)}) {
+        my ($class, $args) = ($1, $2 || '');
+        eval "require $class;" or die "Unable to load class $class ($@)";
+        foreach my $pair (split /\s*,\s*/, $args) {
+            my ($key, $value) = split /\s*=\s*/, $pair;
+            no strict 'refs';
+            ${ "${class}::$key" } = $value;
+        }
+    }
+    else {
+        print STDERR "Unable to parse hook argument ($hook)\n";
+        exit(1);
+    }
+}
+
+my $interp = Coeus::Interpreter->new;
+
+open my($fh), "<$input" or die "Unable to open input file $input ($!)\n";
+local $/;
+my $program = <$fh>;
+
+if($target eq 'run') {
+    eval { $interp->run($program); };
+    if($@) {
+        if(ref $@) {
+            print STDERR $@->[0];
+        }
+        else {
+            print STDERR $@;
+        }
+
+    }
+}
+else {
+    print Dumper(Coeus::Interpreter::AST::unmake($interp->parse($program)));
+}
+
+__END__
+
+=head1 NAME
+
+coeus - The Planned Datacenter Language interpreter
+
+=head1 SYNOPSIS
+
+coeus [options]
+
+Runs the Coeus interpreter.  If no input file is specified, reads from STDIN.
+
+ Options:
+    --input -i      Specify the input file
+    --trace -t      Display the parse trace
+    --backtrace -b  Display backtraces when there is an interpreter error
+    --hook          Load a hook
+    --help -h       Show this help info
+    --man           Show the full man page
+    --target        Specify the run target (default: run)
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--input>
+
+Specify the input file.
+
+=item B<--trace>
+
+Turns on the Parse::RecDescent trace.  WARNING: The trace can be B<very> long, even for
+small files.
+
+=item B<--backtrace>
+
+Turns on the displays a backtrace through the interpreter when an error occurs.
+
+=item B<--hook>
+
+Register a hook with the interpreter.
+
+Hooks are called before and after each operation is completed during the interpretation of
+a program. See L<Coeus::Interpreter::Hook> for more information on hooks.
+
+ PACKAGE_NAME OPT1=VAL,OPT2=VAL,...
+
+For example to use the L<Coeus::Visual::DotMapper> which has options FILE and NO_SYMTAB you
+can run:
+
+ coeus --hook 'Coeus::Visual::DotMapper FILE=output.dot,NO_SYMTAB=1'
+
+=item B<--help>
+
+Display the short help message (the SYNOPSIS).
+
+=item B<--man>
+
+Display the entire man page.
+
+=item B<--target>
+
+Specify the target to run the interpreter to.  One of: ast, run.
+
+The ast target will parse and print the ast to STDOUT.  The run target will parse and execute the program.
+
+=back
+
+=head1 LANGUAGE
+
+=head2 Language Elements
+
+A Coeus program consists of a list of declarations, statements, and expressions.
+Statements do not have any particular value that they evaluate to, whereas expressions
+also evaluate to a value that can be used for further evaluation. The majority of
+the language elements are expressions with only a few things for manipulating
+subscriptions being statements.
+
+Expressions themselves are broken down into four types: regular expressions, boolean
+expressions, policy expressions, and behavior expressions.  For the most part they 
+have the same structure, with the main difference between them being what is allowed
+as part of the expression.
+
+=head2 Declaring Types
+
+ type <TypeName> {
+    <CapabilityName> # capability declaration
+    <BehaviorExpression> -> <CapabilityName> # conditional capability
+                                             # instances have the 
+                                             # capability only when 
+                                             # the expression evaluates 
+                                             # to true
+ }
+
+A TypeName must always start with an uppercase letter. The condition on conditional
+capabilities can be any boolean expression (see below for an explanation of what a
+boolean expression is). What makes it a behavior expression is that no variable references
+are allowed in the expression except for the C<_> variable, which is bound to the 
+instance whose capabilities are being calculated.
+
+=head2 Declaring Landscapes
+
+ landscape <LandscapeName> {
+    <PolicyName>([resilient = <Number>], [comment = <String>]):
+        <PolicyExpression>
+ }
+
+The PolicyName is the name to be given to the policy. The attributes resilient and comment are both optional.
+Comment provides a longer name for the policy and is used during error reporting to provide nicer error messages.
+Resilient specifies the minimum number of failures that this policy needs to be able to handle. The resiliency of
+policies is not also simple to understand so it is a good idea to understand how it will be calculated and check by
+reading the L<Coeus::Model::Policy> and L<Coeus::Interpreter::PolicyCheck> documentation.
+
+A landscape must have one default policy (the one that will be in effect when a subscription for the landscape
+is first made).  The default policy is marked by prefixing the PolicyName with an asterisk (*).
+
+A PolicyExpression is very similar to a BehaviorExpression except that C<_> is not bound to anything (except inside queries)
+and references to other policies is allowed (they use the same syntax as variable references in standard expressions). For example:
+
+ landscape Foo {
+    *start:
+        other && ?[A]
+    other:
+        ?[Bar | _.baz == 2] >= 2
+ }
+
+Creates a landscape C<Foo> that will begin with the policy C<start>. The C<start> policy requires that the policy
+C<other> is true as well as there being at least one instance of type C<A>. The C<other> policy requires that there are
+at least two instances of C<Bar> that have their parameter C<baz> set to C<2>.
+
+=head2 Declaring Actions
+
+ action <ActionName>([<ParameterList>]) {
+    <commands>
+ }
+
+An action evaluates to the last command evaluated in the body of the action.
+The ParameterList is a comma seperated list of identifiers that will be bound
+to the values passed into the action when it is called.
+
+=head2 Statements
+
+There are seven statements in Coeus: subscribe, unsubscribe, in, policy, start, stop, and include.
+
+Subscribe and unsubscribe create and destroy subscriptions to landscapes. The syntax for
+subscribe is:
+
+ subscribe(<LandscapeName>, <Expression>)
+
+The Expression is evaluated to get the name of the subscription. The subscription starts with the default
+policy of the landscape and a configuration with no instances or usages in it. To remove a subscription,
+unsubscribe is used.
+
+ unsubscribe(<Expression>)
+
+Just as with subscribe the Expression evaluates to the name of the subscription to remove. When a subscription
+is remove the instances and usages are simply de-associated from the subscription, they are not decommissioned.
+
+When a change to a subscription needs to be made, then the C<in> statement is used.
+
+ in <Expression> {
+    ...
+ }
+
+Expression evaluates to the name of the subscription to work with and the block is executed in the context of
+the subscriptions configuration.
+
+The policy statement changes the current policy of the current subscription.
+
+ policy[<PolicyName>]
+
+Both start and stop control the lifecycles of instances and usages. Start places an instance or usage in the running
+state, and stop places them in the stopped state.
+
+ start[<Expression>]
+ stop[<Expression>]
+
+The include statement simply includes the text of file into the current source code during interpretation, very
+much like #include in C.
+
+ include <String>
+
+=head2 Expressions
+
+Operators are boolean (&&, ||, not), arithmetic (+, -, *, /), numeric relational
+(>, <, >=, <=, !=, ==), string relational (lt, gt, eq, ne), assignment (:=), and string concatenation (~).
+
+Truth of an expression is based on the same 
+criteria as truth in Perl.  In Perl 0, "", "0", " ", and undefined are all false and
+everything else is true.
+
+Additionally there are constructors:
+
+ ![<Type>]
+ ![<Type>:<identifier>]
+ ![<var> <- <Type>]
+ ![<var> <- <Type>:<identifier>]
+ ![<var> -> <capability> <var>]
+
+The first form commissions a new instance of type Type.  The second can be understood as "commission if needed".
+If there is not an instance of type Type with the given identifier then it will be created, otherwise it will simply be returned.
+If the wanted instance is in the system, but not yet in the subscription in which the command is executed then the instance
+will be brought into the subscription's configuration.  This allows for sharing the same instance between subscriptions.
+
+The third and fourth forms commission or commission if needed, respectively, an instance and install it on the instance
+held in var.  The fifth form commissions a usage relationship.
+
+In the third and fifth forms if the vars hold more than one instance then the commission will be performed for each
+instance, or each pair of instances, in the vars. The fourth form will error in this case since it would mean attempting to install
+the same instance in multiple places.
+
+Decommissioning is accomplished by:
+
+ X[ <expression> ]
+
+It evaluates the expression and then removes the instance(s) or usage(s) from the configuration.
+
+Decommissioning instances when currently inside a subscription will simply remove the association
+between the instance and the subscription. If, on the other hand, the instance is removed
+outside the context of a subscription, then the instance will be completely removed from the system
+(meaning removing it from all subscriptions it may be in).
+
+Decommissioning a usage will always completely remove it!
+
+NOTE: Decommissioning things can have unexpected consequences. Variables may be unbound!
+
+All expressions can have a "topic block" added to them as well.  The topic block 
+is a block of expressions that have the variable C<_> bound to the value of the expression
+that comes before the block.  If the expression that is before the block evaluates to
+a list (such as in the case of queries), the block is applied repeatedly to each element
+of the list.
+
+ <Expression> {
+    ...
+ }
+
+Queries are used to find instances and uses within the current configuration (either the system's or a subscription's).
+
+ ?[ <query> ]
+
+The queries can have several forms
+
+ <TypePattern>                # finds all instances 
+                              # of a given type pattern
+
+ <TypePattern> : <identifier> # finds the instance of 
+                              # type pattern with the 
+                              # given identifier
+
+ <Expression> <- <TypePattern> # finds instances installed 
+                               # on Expression of a given 
+                               # type pattern
+
+ <Expression> <- <TypePattern> : <identifier> # finds the 
+                               # instance installed on 
+                               # Expression of a given type 
+                               # pattern and identifier
+
+ <InstancePattern> -> <CapabilityPattern> <InstancePattern> 
+                               # finds use relationships
+
+The TypePatterns can be either a TypeName, variable reference, or C<?>.  The TypeName searches for
+instances of the given TypeName, a variable reference searchs for the instances held in the variable,
+and C<?> finds all instances.
+
+The InstancePatterns in the usage query form can be either Expressions or C<?>. Expressions are handled the same as variable
+references in the TypePatterns, and C<?> is exactly the same as the C<?> in the TypePatterns. The CapabilityPattern
+can be either a capability name, in which case only usages for the given capability will be returned, or C<?> in which
+case all usages that match the InstancePatterns will be returned.
+
+In addition to the simple querying possible with these patterns, the four instance query forms can have
+a filter specified as:
+
+ <Query> | <Expression>
+
+In which case for each instance found by Query, Expression will be evaluated with C<_> set to the instance.  When the expression
+returns true then the instance will be included in the final result, otherwise it will not.
+
+Action invocations look like function calls in most languages:
+    
+    <ActionName>(arg, arg, ...)
+
+=head2 Predicates
+
+There are two predicates available for looking at an instance: running?, and can?.
+
+C<< running?(<Instance>) >> returns true if the given instance is currently in the running state.
+
+C<< can?(<Capability>) >> returns true if the instance held in C<_> has the given Capability.
+
+=head1 BUGS AND TODO
+
+=over 8
+
+=item * The parser does not provide good error messages when something is wrong.
+
+=item * Specifying parameters for plugin modules interferes with specifying file paths.
+
+=back
+
+=head1 AUTHOR
+
+Andrew Parker <aparker42@gmail.com>

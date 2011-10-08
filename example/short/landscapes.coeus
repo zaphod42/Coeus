@@ -1,0 +1,12 @@
+landscape Static {
+    *setup: 1
+    production(resilient = 1): maintenance
+    maintenance:
+        ?[VHost | running?(_)] >= 1
+}
+landscape Dynamic {
+    *setup: 1
+    production:
+        ?[Apache2 | can?(mod_perl) && running?(_)] && ?[VHost]
+    maintenance: 1
+}

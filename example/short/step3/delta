@@ -1,0 +1,30 @@
+ ==> Entering bind
+ <== Apache2:apache02.mpm := worker
+ ==> Entering bind
+ ==> Entering stop_instance
+ <== stop_instance((Server:server02))
+ ==> Entering bind
+ <== Server:server02.memory := 1024
+ ==> Entering start_instance
+ <== start_instance((Server:server02))
+ ==> Entering bind
+ ==> Entering commission
+ <== commission(Perl) => Perl:Instance_1
+ ==> Entering bind
+ <== Perl:Instance_1.version := 5.8
+ ==> Entering bind
+ <== Perl:Instance_1.has_ithreads := 1
+ ==> Entering bind
+ <== Perl:Instance_1.has_multiplicity := 1
+ ==> Entering bind
+ <== Apache2:apache01.mpm := worker
+ ==> Entering decommission
+ <== decommission(([Apache2:apache01 -> perl Perl:Instance_0]))
+ ==> Entering use
+ <== use(Apache2:apache01, Perl:Instance_1, perl) => [Apache2:apache01 -> perl Perl:Instance_1]
+ ==> Entering stop_instance
+ <== stop_instance(Apache2:apache01)
+ ==> Entering start_instance
+ <== start_instance(Apache2:apache01)
+ ==> Entering decommission
+ <== decommission((Perl:Instance_0))

@@ -1,0 +1,31 @@
+include 'datacenter.coeus'
+in 'static' {
+    ?[Apache2:apache02] {
+        .mpm := "worker"
+    }
+    server := ?[Server:server02]
+    policy[maintenance]
+    stop[server]
+    server { .memory := .memory + 1024 }
+    start[server]
+}
+in 'dynamic' {
+    new_perl := ![?[Server] <- Perl] {
+        .version := 5.8
+        .has_ithreads := 1
+        .has_multiplicity := 1
+    }
+    policy[maintenance]
+    ?[Apache2:apache01] {
+        .mpm := "worker"
+        X[?[_ -> perl ?[Perl]]]
+        ![_ -> perl new_perl]
+        stop[_]
+        start[_]
+    }
+    policy[production]
+}
+X[?[Perl | not .has_ithreads]]
+in 'static' {
+    policy[production]
+}

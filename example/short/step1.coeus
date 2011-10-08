@@ -1,0 +1,18 @@
+include 'datacenter.coeus'
+
+in 'static' {
+    ?[Apache2:apache02] {
+        .mpm := "worker"
+    }
+    
+    server := ?[Server:server02]
+    stop[server]
+    server { .memory := .memory + 1024 }
+    start[server]
+
+    ?[Apache2:apache01] {
+        .mpm := "worker"
+        stop[_]
+        start[_]
+    }
+}

@@ -1,0 +1,47 @@
+type FileServer {
+    .port && ?[_ -> Fibre_SCSI ?] -> NFS
+}
+
+type SAN {
+    Fibre
+    ?[_ -> SCSI ?] -> Fibre_SCSI
+}
+
+type StorageSubsystem {
+    SCSI
+}
+
+type Volume {
+    .size -> Storage
+}
+
+action setup() {
+    fs := ![FileServer] {
+        .port := 2049
+    }
+
+    san := ![SAN]
+
+    storage := ![StorageSubsystem]
+
+    v := ![storage <- Volume] {
+        .size := 10 * 1024 * 1024
+    }
+
+    ![storage -> Storage v]
+    ![san -> SCSI storage]
+    ![fs -> Fibre_SCSI san]
+
+    storage
+}
+
+action new_volume(storage, new_size) {
+    v := ![storage <- Volume] {
+        .size := new_size
+    }
+
+    ![storage -> Storage v]
+}
+
+s := setup()
+new_volume(s, 20 * 1024 * 1024)

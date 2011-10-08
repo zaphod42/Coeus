@@ -1,0 +1,9 @@
+type A {
+    p12
+    p21
+    not can?(q1) && can?(p11) -> q1
+    not can?(q2) && can?(p12) -> q1
+    not can?(q1) && can?(p21) -> q2
+    not can?(q2) && can?(p22) -> q2
+}
+![A]

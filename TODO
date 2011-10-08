@@ -1,0 +1,28 @@
+   * (DONE) Add support for instance and usage lifecycle
+      * (DONE) Need stop on hosting instance stops hosted instances
+      * (DONE) Need to decide on semantics of stopping when instance is used by another instance (probably just stop the usages as well)
+      * (DONE) Need to add stopping of usage (but not at the language level)
+   * (DONE) Fix up the PDL::Interpreter::Mapping system to be a better generic hook mechanism
+   * (PARTIALLY DONE) Update GraphViz visualization up to date to understand subscriptions
+   * (DONE) Code review: some things are getting a little inconsistent
+   * (NEED FINAL CHECK) Bring PDL::Model in line with the current meta model (System is missing, for example)
+   * (DONE) Update semantics of decommisioning of instances to handle subscriptions correctly (what should they be?)
+      * (DONE) Semantics: when decommissioning from a subscription just remove it from subscription
+                          when decommissioning from the system remove the instance completely (including from all subscriptions)
+   * (DONE) Implement ![type:id] commissioning to allow for sharing
+   * (DONE) Improve install syntax to allow specifying ID for the new instance
+   * (DONE) Implement query for ID
+   * (DONE) Implement query for install
+   * (DONE) Cleanup syntax between query and commission of usage (they are too different)
+   * (DONE) Implement start/stop for usage (without this making actions that work on sets of usages are impossible to reverse)
+   * (DONE) Implement resiliency checking of policies
+   * Implement tracing
+   * Implement parameterized capabilities (and usage of them)
+   * Implement interactive mode of pdl.pl
+      * Commands for listing instances, querying system, etc.
+      * Commands for displaying the system
+   * Bring language description in pdl.pl up to date
+   * Document classes
+   * Code the rest of the scenarios
+   * Code the example of planning
+   * Change the syntax for all of the meta operators to use []

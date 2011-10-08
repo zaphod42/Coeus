@@ -1,0 +1,32 @@
+include "types.coeus"
+include "landscapes.coeus"
+
+subscribe(Static, 'static')
+subscribe(Dynamic, 'dynamic')
+
+![![Server:server01] <- Apache2:apache01] {
+    .mpm := "prefork"
+}
+
+![![Server:server02] <- Apache2:apache02] {
+    .mpm := "prefork"
+}
+
+in 'static' {
+    ![![Apache2:apache01] <- VHost:vhost01]
+    ![![Apache2:apache02] <- VHost:vhost02]
+    policy[production]
+}
+
+in 'dynamic' {
+    apache := ![Apache2:apache01]
+    apache.mod_perl := 1
+    ![apache <- VHost:vhost03]
+    perl := ![?[Server] <- Perl] {
+        .version := 5.8
+        .has_ithreads := 0
+        .has_multiplicity := 0
+    }
+    ![apache -> perl perl]
+    policy[production]
+}

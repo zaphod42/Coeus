@@ -1,0 +1,16 @@
+ ==> Entering commission
+ <== commission(Server) => Server:Instance_0
+ ==> Entering bind
+ <== Server:Instance_0.ram := 256
+ ==> Entering commission
+ <== commission(Server) => Server:Instance_1
+ ==> Entering bind
+ <== Server:Instance_1.ram := 5120
+ ==> Entering commission
+ <== commission(Apache) => Apache:Instance_2
+ ==> Entering commission
+ <== commission(Apache) => Apache:Instance_3
+ ==> Entering bind
+ <== Apache:Instance_2.perl := 1
+ ==> Entering bind
+ <== Apache:Instance_3.perl := 1

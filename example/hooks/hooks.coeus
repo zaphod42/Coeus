@@ -1,0 +1,18 @@
+type Server {
+    .ram > 4*1024 -> x86_64
+}
+type Apache {
+    ?[?[Server | .ram >= 512] <- _] && .perl -> mod_perl
+}
+
+![Server] {
+    .ram := 256 
+}
+
+![Server] {
+    .ram := 5*1024
+}
+
+![?[Server] <- Apache] {
+    .perl := 1
+}

@@ -1,0 +1,285 @@
+{
+    use Coeus::Interpreter::AST;
+    use Regexp::Common;
+    my $null_filter = make_expression_filter({ expression => make_literal({ value => 1 }) });
+}
+
+coeus: <skip: qr/(\s*(?:#[^\n]*\n)?)*/> outer_lines end_of_file 
+    { $item[2] }
+
+end_of_file: /^\Z/
+
+identifier: /\b[a-zA-Z_]\w*\b/
+    { make_identifier({ name => $item[1] }) }
+type_identifier: /\b[A-Z]\w*\b/
+    { make_identifier({ name => $item[1] }) }
+
+inner_lines: lines['statement'] 
+outer_lines: lines['command'] 
+
+lines: (<matchrule:$arg[0]> newline { $item[1] })[@arg](s?) <matchrule:$arg[0]>(?) 
+    { my $c = [@{ $item[1] }]; 
+      push(@$c, @{ $item[2] }) if $item[2];
+      make_sequence({ commands => $c }) }
+
+newline: <skip: qr/[^\S\n]*/> /\n/
+
+command: action_decl
+       | type_decl
+       | landscape_decl
+       | statement
+
+statement: meta_command | expression
+
+meta_command: 'subscribe' '(' <commit> identifier ',' expression ')'
+    { make_subscription({ landscape => $item[4],
+                          name      => $item[6] }) }
+            | 'unsubscribe' '(' <commit> expression ')'
+    { make_unsubscribe({ name => $item[4] }) }
+            | /in\b/ <commit> disjunction['term', 'disjunction', 'lvalue'] '{' inner_lines '}'
+    { make_in({ subscription => $item[3], lines => $item[-2] }) }
+            | 'include' <commit> string_literal { make_include({ file => $item[3] }) }
+            | atomic_block
+            | policy_change
+            | stop_instance[@arg]
+            | start_instance[@arg]
+            | <error?> <reject>
+
+landscape_decl: 'landscape' <commit> type_identifier '{' policy_decl(s?) '}'
+    {
+        make_landscape_decl(
+            {
+                name     => $item[3],
+                policies => @{$item[5]} ? $item[5] : [make_policy_decl(
+                    {
+                        default   => 1,
+                        name      => make_identifier({ name => 'unconstrained' }), 
+                        attributes => { resilient => make_literal({ value => 0 }) },
+                        policy    => make_literal({value => 1})
+                    }
+                )]
+            }
+          )
+    }
+            | <error?> <reject>
+
+policy_decl: ('*')(?) identifier attributes(?) ':' policy_expression
+    { make_policy_decl({ default => scalar(@{$item[1]}),
+                   name    => $item[2],
+                   policy  => $item[-1],
+                   attributes => { map { $_->[0] => $_->[1] } @{ $item[3]->[0] } } }) }
+
+attributes: '(' ( /resilient|comment/ '=' literal { [$item[1], $item[3]] } )(s? /,/) ')' { $item[2] }
+
+type_decl: 'type' <commit> type_identifier '{' behavior(s?) '}'
+    { make_type_decl({ name => $item[3],
+                       behavior => make_sequence({ commands => $item[5] }) }) }
+         | <error?> <reject>
+
+behavior: (behavior_expression '->' { $item[1] })(?) capability 
+    { @{ $item[1] } ? make_condition({ condition => $item[1]->[0], capability => $item[2]->[0], uncapability => $item[2]->[1] }) : $item[2]->[0] }
+
+capability: identifier { [make_capability({ name => $item[1] }), make_uncapability({ name => $item[1] })] } 
+
+action_decl: 'action' <commit> identifier '(' identifier(s? /,/) ')' '{' inner_lines '}' 
+    { make_action_decl({ name => $item[3], 
+                         parameters => $item[5], 
+                         body => $item[-2] }) }
+           | <error?> <reject>
+
+
+# Precedence of operators (highest to lowest, pretty much the same as the perl ones):
+#  nonassoc: terms
+#     right: !
+#      left: * /
+#      left: + -
+#  nonassoc: in
+#  nonassoc: < > <= >= lt gt le ge
+#  nonassoc: == != eq ne
+#      left: &&
+#      left: ||
+#  nonassoc: topic block
+#     right: :=
+# 
+# Based upon http://www.perlmonks.org/?node_id=414823 the rules are then written with the highest 
+# precedence at the deepest level of recursion
+expression: binding['term', 'expression', 'lvalue']
+boolean_expression: disjunction['pure_term', 'boolean_expression', 'topic_lvalue']
+policy_expression: disjunction['policy_term', 'boolean_expression', 'topic_lvalue']
+behavior_expression: disjunction['pure_term', 'behavior_expression', 'topic_lvalue']
+
+binding: <rightop: lvalue ':=' topic[@arg]>
+    { make_rightbinop({ terms => $item[1] }) }
+
+topic: disjunction[@arg] topic_block(?)
+    { @{ $item[2] }
+        ? make_topic_block({ topic => $item[1], block => $item[2]->[0] }) 
+        : $item[1] }
+
+topic_block: '{' inner_lines '}' { $item[2] }
+
+disjunction: <leftop: conjunction[@arg] '||' conjunction[@arg]> 
+    { make_leftbinop({ op => '||', terms => $item[1] }) }
+
+conjunction: <leftop: equality[@arg] '&&' equality[@arg]> 
+    { make_leftbinop({ op => '&&', terms => $item[1] }) }
+
+equality: ordering[@arg] (equality_op ordering[@arg] { [$item[1], $item[2]] })[@arg](?)
+    { @{ $item[2] } ? make_binop({ op => $item[2]->[0]->[0], left => $item[1], right => $item[2]->[0]->[1] }) : $item[1] }
+
+equality_op: /==|!=|\b(eq|ne)\b/
+
+ordering: inclusion[@arg] (ordering_op inclusion[@arg] { [$item[1], $item[2]] })[@arg](?)
+    { @{ $item[2] } ? make_binop({ op => $item[2]->[0]->[0], left => $item[1], right => $item[2]->[0]->[1] }) : $item[1] }
+
+ordering_op: /<=|>=|>|<|\b(lt|gt|le|ge)\b/
+
+inclusion: addition[@arg] (/\bsubset\b/ addition[@arg] { $item[2] })[@arg](?)
+    { @{ $item[2] } ? make_inclusion_query({ members => $item[1], universe => $item[2]->[0] }) : $item[1] }
+
+addition: <leftop: multiplication[@arg] add_op multiplication[@arg]> 
+    { make_leftbinop({ terms => $item[1] }) }
+
+add_op: /\+|-|~/
+
+multiplication: <leftop: negation[@arg] mult_op negation[@arg]> 
+    { make_leftbinop({ terms => $item[1] }) }
+
+mult_op: /\/|\*/
+
+# optimizing away the alternation doesn't seem to bring much benefit here
+negation: /\bnot\b/ negation 
+    { make_uniop({ op => make_identifier({ name => '!' }), expr => $item[2] }) }
+        | <matchrule:$arg[0]>[@arg]
+
+pure_term: parenthetical[@arg]
+         | query[@arg]
+         | predicate[@arg]
+         | var_reference[@arg]
+         | literal                                  
+
+policy_term: pure_term[@arg]
+           | identifier
+    { make_policy_ref({ name => $item[1] }) }
+
+term: parenthetical[@arg]
+    | query[@arg]
+    | decommission[@arg]
+    | commission[@arg]
+    | predicate[@arg]
+    | action_call[@arg]
+    | var_reference[@arg]
+    | literal
+
+predicate: cap_query[@arg]
+         | lifecycle_query[@arg]
+
+parenthetical: '(' <matchrule:$arg[1]>[$arg[2]] ')' { $item[2] }
+
+atomic_block: 'atomic' '{' inner_lines '}'
+    { make_atomic_block({ commands => $item[-2] }) }
+
+stop_instance: 'stop[' expression ']'
+    { make_stop_instance({ instance => $item[-2] }) }
+
+start_instance: 'start[' expression ']'
+    { make_start_instance({ instance => $item[-2] }) }
+
+policy_change: 'policy[' identifier ']'
+    { make_policy_change({ policy => $item[-2] }) }
+
+decommission: 'X[' expression ']'
+    { make_decommission({ instance => $item[2] }) }
+
+query: '?[' query_expression[@arg] ']' { $item[2] }
+
+commission: '![' commission_expression ']' 
+    { $item[2] }
+
+commission_expression: commission_instance_expression
+                     | commission_use_expression
+                     | commission_install_expression
+
+commission_instance_expression: type_identifier (':' identifier)(?) 
+    { make_commission({ type => $item[1], id => $item[2]->[0], line => $thisline }) }
+
+commission_install_expression: expression '<-' commission_instance_expression
+    { make_map({ topic => $item[1], 
+                 block => make_install({ 
+                    target => make_deref({ ref => make_varref({ var => make_identifier({ name => '_' }) }) }), 
+                    object => $item[-1], 
+                    line   => $thisline }) }) }
+
+commission_use_expression: expression '->' identifier expression
+    { make_use({ user => $item[1], provider => $item[4], 
+                 type => $item[3], line => $thisline }) }
+
+cap_query: 'can?' '(' identifier ')'
+    { make_can({ capability => $item[3] }) }
+
+lifecycle_query: 'running?' '(' identifier ')'
+    { make_lifecycle_query({ identifier => $item[-2] }) }
+
+action_call: identifier '(' expression(s? /,/) ')' 
+    { make_call({ name => $item[1], args => make_list({ elements => $item[3] }), line => $thisline }) }
+
+query_expression: install_query[@arg]
+                | use_query[@arg]
+                | instance_query[@arg]
+
+use_query: pattern[@arg] '->' capability_pattern pattern[@arg] filter[@arg]
+    { make_use_query({ user => $item[1], provider => $item[4], 
+                       type => $item[3], filter => $item[5] }) }
+
+instance_query: type_pattern[@arg] filter[@arg]
+    { make_instance_query({ type   => $item[1],
+                            filter => $item[2] }) }
+
+install_query: type_pattern[@arg] '<-' <matchrule:$arg[1]> filter[@arg]
+    {
+        make_install_host_query(
+            {
+                host => make_instance_query(
+                    {type => $item[1], filter => $null_filter}
+                ),
+                instance => $item[3],
+                filter   => $item[4]
+            }
+          )
+    }
+             | <matchrule:$arg[1]> '<-' instance_query[@arg]
+    { make_install_instance_query({ host => $item[1], instance => $item[3] }) }
+
+filter: '|' boolean_expression { make_expression_filter({ expression => $item[2] }) }
+      | { $null_filter }
+
+capability_pattern: identifier { make_capability_filter({ capability => $item[1] }) }
+                  | '?' { make_wildcard_filter() }
+
+type_pattern: type_identifier (':' identifier)(?) { make_type_filter({ type => $item[1], id => $item[2]->[0] }) }
+            | var_reference[@arg] { make_identity_filter({ identity => $item[1] }) }
+            | '?' { make_wildcard_filter() }
+
+pattern: <matchrule:$arg[1]> { make_identity_filter({ identity => $item[1] }) }
+       | '?' { make_wildcard_filter() }
+
+var_reference: <matchrule:$arg[2]> { make_deref({ ref => $item[1] }) }
+
+topic_lvalue: ('_')(?) '.' identifier 
+    { make_propref({ var => make_identifier({ name => '_' }), property => $item[3] }) }
+            | '_'
+    { make_varref({ var => make_identifier({ name => '_' }) }) }
+
+lvalue: topic_lvalue 
+      | identifier '.' identifier 
+    { make_propref({ var => $item[1], property => $item[3] }) }
+      | identifier 
+    { make_varref({ var => $item[1] }) }
+
+literal: number_literal
+       | string_literal
+
+number_literal: /-?\d+(\.\d+)?/
+    { make_literal({ value => $item[1] }) }
+string_literal: /$Regexp::Common::RE{quoted}/
+    { make_literal({ value => $item[1] }) }

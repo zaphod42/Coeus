@@ -1,0 +1,18 @@
+include 'types.coeus'
+include 'landscapes.coeus'
+include 'system.coeus'
+include 'actions.coeus'
+
+subscribe(LoadBalanced, 'lb')
+subscribe(LoadBalancedWithDB, 'lbdb')
+subscribe(SingleServer, 'single')
+
+setup_lb_sub('lb')
+setup_lbdb_sub('lbdb')
+setup_single_sub('single')
+
+atomic {
+    in 'lb' { policy[production] }
+    in 'lbdb' { policy[production] }
+    in 'single' { policy[production] }
+}

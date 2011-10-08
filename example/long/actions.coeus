@@ -1,0 +1,82 @@
+# A simple setup of the LoadBalanced landscape to fulfill the production state
+action setup_lb_sub(sub) {
+    in sub {
+        ![Apache:apache001]
+        ![Apache:apache002]
+        ![Apache:apache003]
+
+        ![?[Apache:apache001] <- VHost:lb_vhost1] {
+            .SSL := 0
+        }
+
+        ![?[Apache:apache002] <- VHost:lb_vhost2] {
+            .SSL := 0
+        }
+        ![?[Apache:apache002] <- VHost:lb_ssl_vhost1] {
+            .SSL := 1
+        }
+
+        ![?[Apache:apache003] <- VHost:lb_vhost3] {
+            .SSL := 0
+        }
+        ![?[Apache:apache003] <- VHost:lb_ssl_vhost2] {
+            .SSL := 1
+        }
+
+        ![Keepalived:lb001]
+        ![Keepalived:lb002]
+        ![Keepalived:lb003]
+        ![?[Keepalived:lb001] <- VirtualServer:lb_vs1]
+        ![?[Keepalived:lb002] <- VirtualServer:lb_vs2]
+        ![?[Keepalived:lb003] <- VirtualServer:lb_vs3]
+        
+        ?[VirtualServer] {
+            ![_ -> HTTP ?[VHost | .SSL == 0]]
+        }
+    }
+}
+
+# A simple setup of the LoadBalancedWithDB landscape to fulfill the production state
+action setup_lbdb_sub(sub) {
+    in sub {
+        ![Apache:apache001]
+        ![Apache:apache002]
+        ![MySQL:mysql001]
+        ![MySQL:mysql002]
+
+        ![?[Apache:apache001] <- VHost:lbdb_vhost1] {
+            .SSL := 0
+        }
+        ![?[Apache:apache002] <- VHost:lbdb_vhost2] {
+            .SSL := 0
+        }
+        ![?[Apache:apache002] <- VHost:lbdb_ssl_vhost1] {
+            .SSL := 1
+        }
+
+        ![?[MySQL:mysql001] <- DB:lbdb_db1]
+        ![?[MySQL:mysql002] <- DB:lbdb_db2]
+
+        ![Keepalived:lb001]
+        ![Keepalived:lb002]
+        ![?[Keepalived:lb001] <- VirtualServer:lbdb_vs1] {
+            ![_ -> HTTP ?[VHost | .SSL == 0]]
+        }
+
+        ![?[Keepalived:lb002] <- VirtualServer:lbdb_vs2] {
+            ![_ -> HTTP ?[VHost | .SSL == 0]]
+        }
+
+        ![?[VHost] -> DB ?[DB]]
+    }
+}
+
+# A simple setup for the SingleServer landscape to fulfill the production state
+action setup_single_sub(sub) {
+    in sub {
+        ![Apache:apache001]
+        ![?[Apache:apache001] <- VHost:single_vhost1] {
+            .SSL := 0
+        }
+    }
+}

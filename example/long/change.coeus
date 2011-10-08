@@ -1,0 +1,14 @@
+include 'initial.coeus'
+
+# Stop apache001, modify a parameter, start apache001
+
+in 'single' {
+    a := ?[Apache:apache001]
+    policy[maintenance]
+    stop[a]
+    a {
+        .param := 1
+    }
+    start[a]
+    policy[production]
+}

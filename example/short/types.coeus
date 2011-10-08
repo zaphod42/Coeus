@@ -1,0 +1,13 @@
+type Server { }
+type Apache2 {
+    ?[_ -> perl ?[Perl | can?(ithreads) && .version >= 5.8]] -> threaded_perl
+    ?[_ -> perl ?[Perl | .version >= 5.8]] -> unthreaded_perl
+    .mpm eq "worker" -> Threads
+    .mpm eq "prefork" -> Fork
+    .mod_perl && ((can?(Threads) && can?(threaded_perl)) || (can?(Fork) && can?(unthreaded_perl))) -> mod_perl
+}
+type VHost { }
+type Perl {
+    perl
+    .has_ithreads && .has_multiplicity -> ithreads
+}

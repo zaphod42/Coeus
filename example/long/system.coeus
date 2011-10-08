@@ -1,0 +1,25 @@
+include 'types.coeus'
+
+![Server:server001]
+![?[Server:server001] <- Apache:apache001]
+
+![Server:server002]
+![?[Server:server002] <- Apache:apache002]
+
+![Server:server004]
+![?[Server:server004] <- Apache:apache003]
+
+![Server:server003]
+![?[Server:server003] <- Keepalived:lb001]
+
+![Server:server005]
+![?[Server:server005] <- Keepalived:lb002]
+
+![Server:server006]
+![?[Server:server006] <- Keepalived:lb003]
+
+![Server:server004]
+![?[Server:server004] <- MySQL:mysql001]
+
+![Server:server007]
+![?[Server:server007] <- MySQL:mysql002]

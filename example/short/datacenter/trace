@@ -1,0 +1,38 @@
+ ==> Entering commission
+ <== commission(Server, server01) => Server:server01
+ ==> Entering commission
+ <== commission(Apache2, apache01) => Apache2:apache01
+ ==> Entering bind
+ <== Apache2:apache01.mpm := prefork
+ ==> Entering commission
+ <== commission(Server, server02) => Server:server02
+ ==> Entering commission
+ <== commission(Apache2, apache02) => Apache2:apache02
+ ==> Entering bind
+ <== Apache2:apache02.mpm := prefork
+ ==> Entering commission
+ <== commission(Apache2, apache01) => Apache2:apache01
+ ==> Entering commission
+ <== commission(VHost, vhost01) => VHost:vhost01
+ ==> Entering commission
+ <== commission(Apache2, apache02) => Apache2:apache02
+ ==> Entering commission
+ <== commission(VHost, vhost02) => VHost:vhost02
+ ==> Entering bind
+ ==> Entering commission
+ <== commission(Apache2, apache01) => Apache2:apache01
+ ==> Entering bind
+ <== Apache2:apache01.mod_perl := 1
+ ==> Entering commission
+ <== commission(VHost, vhost03) => VHost:vhost03
+ ==> Entering bind
+ ==> Entering commission
+ <== commission(Perl) => Perl:Instance_0
+ ==> Entering bind
+ <== Perl:Instance_0.version := 5.8
+ ==> Entering bind
+ <== Perl:Instance_0.has_ithreads := 0
+ ==> Entering bind
+ <== Perl:Instance_0.has_multiplicity := 0
+ ==> Entering use
+ <== use(Apache2:apache01, Perl:Instance_0, perl) => [Apache2:apache01 -> perl Perl:Instance_0]

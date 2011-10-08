@@ -1,0 +1,37 @@
+type WebServer {
+    HTTP
+    Rsync
+}
+
+type LoadBalancer {
+    ?[_ -> HTTP ?] -> HTTP
+}
+
+type LogProcessor { }
+
+action setup() {
+    w1 := ![WebServer]
+    w2 := ![WebServer]
+    w3 := ![WebServer]
+
+    lb := ![LoadBalancer]
+    ![lb -> HTTP ?[WebServer]]
+
+    log := ![LogProcessor]
+    ![log -> Rsync ?[WebServer]]
+
+    w1
+}
+
+action decommission(webserver) {
+    X[ ?[?[LoadBalancer] -> HTTP webserver] ]
+
+    ?[?[LogProcessor] -> Rsync webserver] { 
+        X[_]
+    }
+
+    X[webserver]
+}
+
+webserver := setup()
+decommission(webserver)

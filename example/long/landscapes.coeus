@@ -1,0 +1,36 @@
+# A simple single web server
+landscape SingleServer {
+    *setup: 1
+    production:
+        ?[Apache | running?(_)] == 1
+    maintenance:
+        ?[Apache] >= 1
+}
+
+# Basic load balanced web server
+landscape LoadBalanced {
+    *setup: 1
+    production(resilient = 2): # this system needs to work even with 2 failures
+           ?[?[VirtualServer | not can?(SSL) ] -> HTTP ?[VHost | .SSL == 0]]   # need at least one system usable by the load balancer
+        && ?[VHost | .SSL == 1] >= 1                                           # Need at least one SSL system 
+        && ?[?[VirtualServer] -> HTTP ?[VHost | .SSL == 1]] == 0               # The SSL systems are not load balanced
+    maintenance(resilient = 1):
+           ?[?[VirtualServer | not can?(SSL) ] -> HTTP ?[VHost | .SSL == 0]]
+}
+
+# This is the Online system
+landscape LoadBalancedWithDB {
+    *setup: 1
+    production(resilient = 1): # this system needs to work even with 1 failure
+        load_balancer && ssl_vhost && ssl_not_load_balanced && db && using_running_db
+    load_balancer:
+        ?[?[VirtualServer | not can?(SSL) ] -> HTTP ?[VHost | .SSL == 0]]   # need at least one system usable by the load balancer
+    ssl_vhost:
+        ?[VHost | .SSL == 1] >= 1                                           # Need at least one SSL system 
+    ssl_not_load_balanced:
+        ?[?[VirtualServer] -> HTTP ?[VHost | .SSL == 1]] == 0               # The SSL systems are not load balanced
+    db:
+        ?[DB | running?(_)] >= 1                                            # There needs to be at least one running DB
+    using_running_db:
+        ?[VHost | running?(_) && ?[_ -> DB ?[?[MySQL | running?(_)] <- DB]]] == ?[VHost | running?(_)] # all Vhosts that are running are using a DB on a running MySQL
+}

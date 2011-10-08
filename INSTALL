@@ -1,0 +1,28 @@
+The Provisioning Description Language
+
+To setup the system for working with PDL (without installing it):
+
+    perl Build.PL
+    ./Build
+    export PERL5LIB=`pwd`/blib/lib
+
+After this you should be able to run the PDL interpreter without
+having to install it on your system.
+
+For documentation run:
+
+    ./pdl.pl --man
+
+This program requires Parse::RecDescent and Regexp::Common 
+to be installed on the system (install them via CPAN).  To use 
+the PDL::Visual::DotMapper mapping module you will also need to have 
+Graph::Easy installed.  To be able to view the generated GraphViz dot 
+file you will need to have GraphViz installed as well (you can try to 
+read the file, but it is not made for human consumption).
+
+For running the tests the only additional package that should
+be required is Test::Deep.  To run the tests run
+
+    ./Build test
+
+from the root of the PDL distro.

@@ -1,0 +1,43 @@
+=head1 NAME
+
+MODULE - Short Desc
+
+=head1 SYNOPSIS
+
+    # Example code
+
+=head1 DESCRIPTION
+
+A longer description of the module
+
+=head1 METHODS
+
+=over 8
+
+=item C<method($arg, [$optional])>
+
+Description of method, args, and returns.
+
+=back
+
+=head1 DIAGNOSTICS
+
+Desc of what can go wrong and how to detect it.
+
+=head1 BUGS AND LIMITATIONS
+
+There are no known bugs in this module.
+
+Please report problems to Andrew Parker (aparker42@gmail.com)
+
+Patches are welcome.
+
+=head1 AUTHOR
+
+Andrew Parker (aparker42@gmail.com)
+
+=head1 LICENSE AND COPYRIGHT
+
+*TODO: probably something from IBM*
+
+=cut

@@ -1,0 +1,12 @@
+ ==> Entering bind
+ <== Apache2:apache02.mpm := worker
+ ==> Entering bind
+ ==> Entering stop_instance
+ <== stop_instance((Server:server02))
+ERROR: Configuration does not conform to policy
+Counterexample: 
+	 -> Instance(Apache2:apache01)
+failed in the policy maintenance
+failed in the policy production
+for subscription static
+

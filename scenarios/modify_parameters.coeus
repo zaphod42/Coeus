@@ -1,0 +1,42 @@
+type Apache {
+}
+
+type VHost {
+    HTTP
+}
+
+type LoadBalancer {
+}
+
+action setup() {
+    lb := ![LoadBalancer]
+
+    server := ![Apache] {
+        .MaxChildren := 20
+    }
+
+    vh1 := ![server <- VHost]
+
+    vh2 := ![server <- VHost]
+
+    ![lb -> HTTP vh2]
+
+    vh2
+}
+
+action modify_parameter(vh) {
+    server := ?[Apache]
+    server { 
+        .MaxChildren := .MaxChildren + 20
+    }
+    
+    balancing := ?[?[LoadBalancer] -> HTTP ?[server <- ?]]
+    stop[balancing]
+
+    stop[server]
+    start[server]
+
+    start[balancing]
+}
+
+modify_parameter(setup())

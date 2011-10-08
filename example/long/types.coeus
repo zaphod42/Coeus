@@ -1,0 +1,31 @@
+type Server {
+}
+
+type Apache {
+    .mpm eq "worker" -> Threads
+    .mpm eq "prefork" -> Fork
+}
+
+# An apache virtual host
+type VHost {
+    HTTP
+    .SSL -> HTTPS
+}
+
+type MySQL {
+}
+
+type DB {
+    DB
+    .type eq 'InnoDB' -> transactions
+}
+
+type Keepalived {
+}
+
+# A keepalived virtual server
+# It will use real servers
+type VirtualServer {
+    ?[_ -> HTTP ?] -> HTTP
+    ?[_ -> HTTPS ?] -> HTTPS
+}
