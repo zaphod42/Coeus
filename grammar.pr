@@ -1,6 +1,6 @@
 {
     use Coeus::Interpreter::AST;
-    use Regexp::Common;
+    use Regexp::Common qw(delimited);
     my $null_filter = make_expression_filter({ expression => make_literal({ value => 1 }) });
 }
 
@@ -223,8 +223,8 @@ lifecycle_query: 'running?' '(' identifier ')'
 action_call: identifier '(' expression(s? /,/) ')' 
     { make_call({ name => $item[1], args => make_list({ elements => $item[3] }), line => $thisline }) }
 
-query_expression: install_query[@arg]
-                | use_query[@arg]
+query_expression: use_query[@arg]
+                | install_query[@arg] 
                 | instance_query[@arg]
 
 use_query: pattern[@arg] '->' capability_pattern pattern[@arg] filter[@arg]
