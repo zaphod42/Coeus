@@ -15,7 +15,7 @@ sub ACTION_test {
 sub process_pr_files {
     my $self = shift;
 
-    eval 'use Parse::RecDescent;' or die "Unable to load Parse::RecDescent";
+    eval 'use Parse::RecDescent; 1;' or die "Unable to load Parse::RecDescent";
 
     my $target = File::Spec->catdir($self->blib, 'lib', 'Coeus', 'Interpreter', 'Grammar.pm');
 
