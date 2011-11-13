@@ -1,57 +1,77 @@
 ---
-name: Coeus
-version: 0.7.1
+abstract: 'The Planned Datacenter Language interpreter'
 author:
   - 'Andrew Parker <aparker42@gmail.com>'
-abstract: The Planned Datacenter Language interpreter
+build_requires:
+  Test::Deep: 0.097
+configure_requires:
+  Module::Build: 0.38
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112150'
 license: restrictive
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Coeus
+provides:
+  Coeus::Interpreter:
+    file: lib/Coeus/Interpreter.pm
+    version: 0
+  Coeus::Interpreter::AST:
+    file: lib/Coeus/Interpreter/AST.pm
+    version: 0
+  Coeus::Interpreter::Commands:
+    file: lib/Coeus/Interpreter/Commands.pm
+    version: 0
+  Coeus::Interpreter::Environment:
+    file: lib/Coeus/Interpreter/Environment.pm
+    version: 0
+  Coeus::Interpreter::Hook:
+    file: lib/Coeus/Interpreter/Hook.pm
+    version: 0
+  Coeus::Interpreter::PolicyCheck:
+    file: lib/Coeus/Interpreter/PolicyCheck.pm
+    version: 0
+  Coeus::Interpreter::SymTab:
+    file: lib/Coeus/Interpreter/SymTab.pm
+    version: 0
+  Coeus::Model::Configuration:
+    file: lib/Coeus/Model/Configuration.pm
+    version: 0
+  Coeus::Model::Instance:
+    file: lib/Coeus/Model/Instance.pm
+    version: 0
+  Coeus::Model::Landscape:
+    file: lib/Coeus/Model/Landscape.pm
+    version: 0
+  Coeus::Model::Lifecycle:
+    file: lib/Coeus/Model/Lifecycle.pm
+    version: 0
+  Coeus::Model::Policy:
+    file: lib/Coeus/Model/Policy.pm
+    version: 0
+  Coeus::Model::Subscription:
+    file: lib/Coeus/Model/Subscription.pm
+    version: 0
+  Coeus::Model::System:
+    file: lib/Coeus/Model/System.pm
+    version: 0
+  Coeus::Model::Use:
+    file: lib/Coeus/Model/Use.pm
+    version: 0
+  Coeus::Visual::DotMapper:
+    file: lib/Coeus/Visual/DotMapper.pm
+    version: 0
+  Coeus::Visual::Trace:
+    file: lib/Coeus/Visual/Trace.pm
+    version: 0
+recommends:
+  Graph::Easy: 0.61
 requires:
   Clone: 0.22
   Math::Combinatorics: 0.09
   Moose: 0.40
   Parse::RecDescent: 1.94
   Regexp::Common: 2.120
-  perl: 5.8.1
-build_requires:
-  Test::Deep: 0.097
-recommends:
-  Graph::Easy: 0.61
-provides:
-  Coeus::Interpreter:
-    file: lib/Coeus/Interpreter.pm
-  Coeus::Interpreter::AST:
-    file: lib/Coeus/Interpreter/AST.pm
-  Coeus::Interpreter::Commands:
-    file: lib/Coeus/Interpreter/Commands.pm
-  Coeus::Interpreter::Environment:
-    file: lib/Coeus/Interpreter/Environment.pm
-  Coeus::Interpreter::Hook:
-    file: lib/Coeus/Interpreter/Hook.pm
-  Coeus::Interpreter::PolicyCheck:
-    file: lib/Coeus/Interpreter/PolicyCheck.pm
-  Coeus::Interpreter::SymTab:
-    file: lib/Coeus/Interpreter/SymTab.pm
-  Coeus::Model::Configuration:
-    file: lib/Coeus/Model/Configuration.pm
-  Coeus::Model::Instance:
-    file: lib/Coeus/Model/Instance.pm
-  Coeus::Model::Landscape:
-    file: lib/Coeus/Model/Landscape.pm
-  Coeus::Model::Lifecycle:
-    file: lib/Coeus/Model/Lifecycle.pm
-  Coeus::Model::Policy:
-    file: lib/Coeus/Model/Policy.pm
-  Coeus::Model::Subscription:
-    file: lib/Coeus/Model/Subscription.pm
-  Coeus::Model::System:
-    file: lib/Coeus/Model/System.pm
-  Coeus::Model::Use:
-    file: lib/Coeus/Model/Use.pm
-  Coeus::Visual::DotMapper:
-    file: lib/Coeus/Visual/DotMapper.pm
-  Coeus::Visual::Trace:
-    file: lib/Coeus/Visual/Trace.pm
-generated_by: Module::Build version 0.2806
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+  perl: v5.8.1
+version: v0.7.1

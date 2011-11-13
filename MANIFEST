@@ -1,6 +1,5 @@
 Build.PL
 coeus
-commit
 example/hooks.coeus
 example/hooks/gen.sh
 example/hooks/hooks.coeus
@@ -75,3 +74,4 @@ t/use.t
 template.pod
 test.coeus
 TODO
+META.json

@@ -98,6 +98,9 @@ Runs the Coeus interpreter.  If no input file is specified, reads from STDIN.
     --man           Show the full man page
     --target        Specify the run target (default: run)
 
+For a complete explanation of the idea behind the interpreter and the language read 
+https://github.com/zaphod42/Coeus/blob/master/doc/Masterarbeit.pdf
+
 =head1 OPTIONS
 
 =over 8

@@ -16,6 +16,10 @@ SYNOPSIS
         --man           Show the full man page
         --target        Specify the run target (default: run)
 
+    For a complete explanation of the idea behind the interpreter and the
+    language read
+    https://github.com/zaphod42/Coeus/blob/master/doc/Masterarbeit.pdf
+
 OPTIONS
     --input Specify the input file.
 
@@ -51,7 +55,6 @@ OPTIONS
 
 LANGUAGE
   Language Elements
-
     A Coeus program consists of a list of declarations, statements, and
     expressions. Statements do not have any particular value that they
     evaluate to, whereas expressions also evaluate to a value that can be
@@ -66,7 +69,6 @@ LANGUAGE
     expression.
 
   Declaring Types
-
      type <TypeName> {
         <CapabilityName> # capability declaration
         <BehaviorExpression> -> <CapabilityName> # conditional capability
@@ -80,11 +82,10 @@ LANGUAGE
     conditional capabilities can be any boolean expression (see below for an
     explanation of what a boolean expression is). What makes it a behavior
     expression is that no variable references are allowed in the expression
-    except for the `_' variable, which is bound to the instance whose
+    except for the "_" variable, which is bound to the instance whose
     capabilities are being calculated.
 
   Declaring Landscapes
-
      landscape <LandscapeName> {
         <PolicyName>([resilient = <Number>], [comment = <String>]):
             <PolicyExpression>
@@ -104,7 +105,7 @@ LANGUAGE
     is marked by prefixing the PolicyName with an asterisk (*).
 
     A PolicyExpression is very similar to a BehaviorExpression except that
-    `_' is not bound to anything (except inside queries) and references to
+    "_" is not bound to anything (except inside queries) and references to
     other policies is allowed (they use the same syntax as variable
     references in standard expressions). For example:
 
@@ -115,14 +116,13 @@ LANGUAGE
             ?[Bar | _.baz == 2] >= 2
      }
 
-    Creates a landscape `Foo' that will begin with the policy `start'. The
-    `start' policy requires that the policy `other' is true as well as there
-    being at least one instance of type `A'. The `other' policy requires
-    that there are at least two instances of `Bar' that have their parameter
-    `baz' set to `2'.
+    Creates a landscape "Foo" that will begin with the policy "start". The
+    "start" policy requires that the policy "other" is true as well as there
+    being at least one instance of type "A". The "other" policy requires
+    that there are at least two instances of "Bar" that have their parameter
+    "baz" set to 2.
 
   Declaring Actions
-
      action <ActionName>([<ParameterList>]) {
         <commands>
      }
@@ -132,7 +132,6 @@ LANGUAGE
     will be bound to the values passed into the action when it is called.
 
   Statements
-
     There are seven statements in Coeus: subscribe, unsubscribe, in, policy,
     start, stop, and include.
 
@@ -153,7 +152,7 @@ LANGUAGE
     usages are simply de-associated from the subscription, they are not
     decommissioned.
 
-    When a change to a subscription needs to be made, then the `in'
+    When a change to a subscription needs to be made, then the "in"
     statement is used.
 
      in <Expression> {
@@ -181,7 +180,6 @@ LANGUAGE
      include <String>
 
   Expressions
-
     Operators are boolean (&&, ||, not), arithmetic (+, -, *, /), numeric
     relational (>, <, >=, <=, !=, ==), string relational (lt, gt, eq, ne),
     assignment (:=), and string concatenation (~).
@@ -234,7 +232,7 @@ LANGUAGE
     may be unbound!
 
     All expressions can have a "topic block" added to them as well. The
-    topic block is a block of expressions that have the variable `_' bound
+    topic block is a block of expressions that have the variable "_" bound
     to the value of the expression that comes before the block. If the
     expression that is before the block evaluates to a list (such as in the
     case of queries), the block is applied repeatedly to each element of the
@@ -270,16 +268,16 @@ LANGUAGE
      <InstancePattern> -> <CapabilityPattern> <InstancePattern> 
                                    # finds use relationships
 
-    The TypePatterns can be either a TypeName, variable reference, or `?'.
+    The TypePatterns can be either a TypeName, variable reference, or "?".
     The TypeName searches for instances of the given TypeName, a variable
-    reference searchs for the instances held in the variable, and `?' finds
+    reference searchs for the instances held in the variable, and "?" finds
     all instances.
 
     The InstancePatterns in the usage query form can be either Expressions
-    or `?'. Expressions are handled the same as variable references in the
-    TypePatterns, and `?' is exactly the same as the `?' in the
+    or "?". Expressions are handled the same as variable references in the
+    TypePatterns, and "?" is exactly the same as the "?" in the
     TypePatterns. The CapabilityPattern can be either a capability name, in
-    which case only usages for the given capability will be returned, or `?'
+    which case only usages for the given capability will be returned, or "?"
     in which case all usages that match the InstancePatterns will be
     returned.
 
@@ -289,7 +287,7 @@ LANGUAGE
      <Query> | <Expression>
 
     In which case for each instance found by Query, Expression will be
-    evaluated with `_' set to the instance. When the expression returns true
+    evaluated with "_" set to the instance. When the expression returns true
     then the instance will be included in the final result, otherwise it
     will not.
 
@@ -298,21 +296,22 @@ LANGUAGE
         <ActionName>(arg, arg, ...)
 
   Predicates
-
     There are two predicates available for looking at an instance: running?,
     and can?.
 
-    `running?(<Instance>)' returns true if the given instance is currently
+    "running?(<Instance>)" returns true if the given instance is currently
     in the running state.
 
-    `can?(<Capability>)' returns true if the instance held in `_' has the
+    "can?(<Capability>)" returns true if the instance held in "_" has the
     given Capability.
 
 BUGS AND TODO
-    * The parser does not provide good error messages when something is
-    wrong.
-    * Specifying parameters for plugin modules interferes with specifying
-    file paths.
+    *       The parser does not provide good error messages when something
+            is wrong.
+
+    *       Specifying parameters for plugin modules interferes with
+            specifying file paths.
+
 AUTHOR
     Andrew Parker <aparker42@gmail.com>
 
