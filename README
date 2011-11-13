@@ -18,7 +18,7 @@ SYNOPSIS
 
     For a complete explanation of the idea behind the interpreter and the
     language read
-    https://github.com/zaphod42/Coeus/blob/master/doc/Masterarbeit.pdf
+    https://github.com/zaphod42/Coeus/raw/master/doc/Masterarbeit.pdf
 
 OPTIONS
     --input Specify the input file.
